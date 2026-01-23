@@ -228,20 +228,6 @@ A sample file is provided at `Internship-backend/sample-data/students-sample.csv
 
 ---
 
-## 📝 Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `MONGO_URI` | MongoDB connection string | ✅ |
-| `JWT_SECRET` | Secret for JWT tokens | ✅ |
-| `JWT_EXPIRES_IN` | Token expiration (e.g., `7d`) | ✅ |
-| `PORT` | Server port (default: 5000) | ❌ |
-| `NODE_ENV` | Environment mode | ❌ |
-| `EMAIL_USER` | Gmail address for notifications | ❌ |
-| `EMAIL_PASS` | Gmail App Password | ❌ |
-
----
-
 ## 🤝 Contributing
 
 1. Fork the repository
