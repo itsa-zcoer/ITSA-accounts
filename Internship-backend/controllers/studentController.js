@@ -232,6 +232,44 @@ const searchStudentByPRN = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Search students by name or PRN (Autocomplete)
+ * @route   GET /api/students/search
+ * @access  Private
+ * 
+ * Query Params:
+ * - query: Search term (name or prn)
+ * - limit: Max results (default 10)
+ */
+const searchStudents = asyncHandler(async (req, res) => {
+    const { query } = req.query;
+    const limit = parseInt(req.query.limit) || 10;
+
+    if (!query) {
+        res.status(400);
+        throw new Error('Please provide a search query');
+    }
+
+    // Escape special regex characters
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Search by PRN or Name (case-insensitive)
+    const students = await Student.find({
+        $or: [
+            { prn: { $regex: escapedQuery, $options: 'i' } },
+            { name: { $regex: escapedQuery, $options: 'i' } }
+        ]
+    })
+        .limit(limit)
+        .select('prn name department year division rollNo email phone fines');
+
+    res.status(200).json({
+        success: true,
+        count: students.length,
+        data: students
+    });
+});
+
+/**
  * @desc    Get student by PRN (alias for search)
  * @route   GET /api/students/:prn
  * @access  Private
@@ -784,6 +822,7 @@ module.exports = {
     deleteStudentsByDivision,
     deleteStudentsByYear,
     deleteStudentsByClass,
-    getAllStudentsAdvanced
+    getAllStudentsAdvanced,
+    searchStudents
 };
 
