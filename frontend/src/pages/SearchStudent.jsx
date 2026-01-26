@@ -161,7 +161,7 @@ const SearchStudent = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-500 uppercase tracking-wide">Department</p>
-                                    <p className="text-sm font-medium text-gray-800">{student.department || 'N/A'}</p>
+                                    <p className="text-sm font-medium text-gray-800">{'IT'}</p>
                                 </div>
                             </div>
 
@@ -190,7 +190,7 @@ const SearchStudent = () => {
                                     <span className="text-lg font-bold text-amber-600">₹</span>
                                 </div>
                                 <div>
-                                    <p className="text-xs text-gray-500 uppercase tracking-wide">Total Fines</p>
+                                    <p className="text-xs text-gray-500 uppercase tracking-wide">Total Fees</p>
                                     <p className="text-sm font-bold text-amber-600">
                                         ₹{student.totalFines?.toLocaleString('en-IN') || 0}
                                     </p>
