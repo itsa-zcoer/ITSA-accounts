@@ -133,6 +133,19 @@ router.delete('/division/:division', deleteStudentsByDivision);
  */
 router.delete('/year/:year', deleteStudentsByYear);
 
+/**
+ * @route   DELETE /api/students/class
+ * @desc    Delete all students by year and division (class)
+ * @access  Private
+ * 
+ * Request Body:
+ * {
+ *   "year": "FY",
+ *   "division": "A"
+ * }
+ */
+router.delete('/class', deleteStudentsByClass);
+
 // ===========================================
 // Dynamic PRN Routes (MUST be after specific routes)
 // ===========================================
