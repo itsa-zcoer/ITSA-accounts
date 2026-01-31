@@ -128,8 +128,8 @@ internship/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/college-fine-management.git
-cd college-fine-management
+git clone https://github.com/pratiktawhare/Zeal_IT_Fine_Management.git
+cd Zeal_IT_Fine_Management
 ```
 
 ### 2. Backend Setup
