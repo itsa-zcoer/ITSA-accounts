@@ -73,6 +73,27 @@ const getFinancialSummary = asyncHandler(async (req, res) => {
     ]);
     const totalExpenditure = expenditureResult.length > 0 ? expenditureResult[0].totalExpenditure : 0;
 
+    // Calculate this month's expenditure
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    const thisMonthResult = await Expenditure.aggregate([
+        { $match: { date: { $gte: startOfMonth, $lte: endOfMonth } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const thisMonthExpenditure = thisMonthResult.length > 0 ? thisMonthResult[0].total : 0;
+
+    // Calculate today's expenditure
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+    const todayResult = await Expenditure.aggregate([
+        { $match: { date: { $gte: startOfToday, $lte: endOfToday } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const todayExpenditure = todayResult.length > 0 ? todayResult[0].total : 0;
+
     // Calculate balance
     const balance = totalIncome - totalExpenditure;
 
@@ -94,6 +115,8 @@ const getFinancialSummary = asyncHandler(async (req, res) => {
             financial: {
                 totalIncome: totalIncome,
                 totalExpenditure: totalExpenditure,
+                thisMonth: thisMonthExpenditure,
+                today: todayExpenditure,
                 balance: balance,
                 status: balance >= 0 ? 'surplus' : 'deficit'
             },
@@ -103,7 +126,12 @@ const getFinancialSummary = asyncHandler(async (req, res) => {
                 totalFines: totalFineCount.length > 0 ? totalFineCount[0].total : 0,
                 totalExpenditures: totalExpenditureCount
             },
-            expenditureByCategory: expenditureByCategory
+            expenditureByCategory: expenditureByCategory,
+            // Add simplified summary for easy access
+            totalAmount: totalExpenditure,
+            thisMonth: thisMonthExpenditure,
+            today: todayExpenditure,
+            count: totalExpenditureCount
         }
     });
 });

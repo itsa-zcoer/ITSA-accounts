@@ -121,6 +121,11 @@ export const AuthProvider = ({ children }) => {
         return !!admin && !!localStorage.getItem('adminToken');
     };
 
+    // Update admin data (for profile updates)
+    const updateAdmin = (updates) => {
+        setAdmin(prev => prev ? { ...prev, ...updates } : null);
+    };
+
     const value = {
         admin,
         loading,
@@ -133,6 +138,7 @@ export const AuthProvider = ({ children }) => {
         setError,
         checkSetupStatus,
         registerAdmin,
+        updateAdmin,
     };
 
     return (

@@ -20,7 +20,7 @@ import {
 } from 'react-icons/fi';
 
 const SystemAdmin = () => {
-    const { admin, isAuthenticated } = useAuth();
+    const { admin, isAuthenticated, updateAdmin } = useAuth();
     const navigate = useNavigate();
 
     // Profile state
@@ -79,7 +79,9 @@ const SystemAdmin = () => {
         setIsProfileLoading(true);
 
         try {
-            await authAPI.updateProfile({ name: name.trim() });
+            const response = await authAPI.updateProfile({ name: name.trim() });
+            // Update the admin context with the new name
+            updateAdmin({ name: response.data.data.name });
             setProfileSuccess('Profile updated successfully');
         } catch (err) {
             setProfileError(err.response?.data?.message || 'Failed to update profile');
@@ -170,9 +172,20 @@ const SystemAdmin = () => {
                 setResetError('Please enter your password');
                 return;
             }
-            // Move to confirmation phrase step
-            setResetStep(3);
+
+            // Verify password with server
+            setIsResetting(true);
             setResetError('');
+
+            try {
+                await authAPI.verifyPassword(resetPassword);
+                // Password verified, move to confirmation phrase step
+                setResetStep(3);
+            } catch (err) {
+                setResetError(err.response?.data?.message || 'Password verification failed');
+            } finally {
+                setIsResetting(false);
+            }
             return;
         }
 
@@ -672,7 +685,7 @@ const SystemAdmin = () => {
                                         {isResetting ? (
                                             <>
                                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                                <span>Resetting...</span>
+                                                <span>{resetStep === 2 ? 'Verifying...' : 'Resetting...'}</span>
                                             </>
                                         ) : (
                                             <>

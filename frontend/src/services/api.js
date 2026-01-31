@@ -45,6 +45,7 @@ export const authAPI = {
     register: (data) => api.post('/auth/register', data),
     getProfile: () => api.get('/auth/profile'),
     changePassword: (data) => api.put('/auth/change-password', data),
+    verifyPassword: (password) => api.post('/auth/verify-password', { password }),
     updateProfile: (data) => api.put('/auth/update-profile', data),
     forgotPassword: () => api.post('/auth/forgot-password'),
     verifyOtp: (otp) => api.post('/auth/verify-otp', { otp }),

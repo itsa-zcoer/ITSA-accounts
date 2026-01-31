@@ -309,6 +309,42 @@ const changePassword = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Verify admin password (for dangerous operations)
+ * @route   POST /api/auth/verify-password
+ * @access  Private
+ */
+const verifyPassword = asyncHandler(async (req, res) => {
+    const { password } = req.body;
+
+    if (!password) {
+        res.status(400);
+        throw new Error('Password is required');
+    }
+
+    // Get admin with password
+    const admin = await Admin.findById(req.admin.id).select('+password');
+
+    if (!admin) {
+        res.status(404);
+        throw new Error('Admin not found');
+    }
+
+    // Verify password
+    const isMatch = await admin.comparePassword(password);
+
+    if (!isMatch) {
+        res.status(400);
+        throw new Error('Incorrect password');
+    }
+
+    res.status(200).json({
+        success: true,
+        message: 'Password verified successfully'
+    });
+});
+
+
+/**
  * @desc    Update admin profile (name only, email is fixed)
  * @route   PUT /api/auth/update-profile
  * @access  Private
@@ -518,7 +554,7 @@ const resetDatabase = asyncHandler(async (req, res) => {
     const isMatch = await admin.comparePassword(password);
 
     if (!isMatch) {
-        res.status(401);
+        res.status(400); // Changed from 401 to prevent frontend from redirecting to login
         throw new Error('Incorrect password');
     }
 
@@ -567,6 +603,7 @@ module.exports = {
     getProfile,
     registerAdmin,
     changePassword,
+    verifyPassword,
     updateProfile,
     forgotPassword,
     verifyOtp,

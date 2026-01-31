@@ -39,9 +39,6 @@ const StudentFeesLedger = () => {
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({
         studentClass: '',
-        division: '',
-        category: '',
-        studentClass: '',
         academicYear: '',
         division: '',
         category: '',

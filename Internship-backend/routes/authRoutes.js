@@ -13,6 +13,7 @@ const {
     getProfile,
     registerAdmin,
     changePassword,
+    verifyPassword,
     updateProfile,
     forgotPassword,
     verifyOtp,
@@ -108,6 +109,18 @@ router.get('/profile', protect, getProfile);
  * }
  */
 router.put('/change-password', protect, changePassword);
+
+/**
+ * @route   POST /api/auth/verify-password
+ * @desc    Verify admin password (for dangerous operations)
+ * @access  Private
+ * 
+ * Request Body:
+ * {
+ *   "password": "admin_password"
+ * }
+ */
+router.post('/verify-password', protect, verifyPassword);
 
 /**
  * @route   PUT /api/auth/update-profile
