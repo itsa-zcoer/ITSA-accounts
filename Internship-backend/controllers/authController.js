@@ -6,6 +6,10 @@
  */
 
 const Admin = require('../models/Admin');
+const Student = require('../models/Student');
+const Expenditure = require('../models/Expenditure');
+const FeeLedger = require('../models/FeeLedger');
+const PaymentCategory = require('../models/PaymentCategory');
 const { generateToken } = require('../middleware/authMiddleware');
 const { asyncHandler } = require('../middleware/errorMiddleware');
 const nodemailer = require('nodemailer');
@@ -476,6 +480,87 @@ const resetPassword = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * @desc    Reset entire database (dangerous operation)
+ * @route   POST /api/auth/reset-database
+ * @access  Private
+ */
+const resetDatabase = asyncHandler(async (req, res) => {
+    const { password, confirmationPhrase } = req.body;
+
+    // Validate inputs
+    if (!password) {
+        res.status(400);
+        throw new Error('Password is required for this operation');
+    }
+
+    if (!confirmationPhrase) {
+        res.status(400);
+        throw new Error('Confirmation phrase is required');
+    }
+
+    // Verify confirmation phrase
+    const REQUIRED_PHRASE = 'DELETE EVERYTHING';
+    if (confirmationPhrase !== REQUIRED_PHRASE) {
+        res.status(400);
+        throw new Error(`Please type "${REQUIRED_PHRASE}" exactly to confirm`);
+    }
+
+    // Get admin with password
+    const admin = await Admin.findById(req.admin.id).select('+password');
+
+    if (!admin) {
+        res.status(404);
+        throw new Error('Admin not found');
+    }
+
+    // Verify password
+    const isMatch = await admin.comparePassword(password);
+
+    if (!isMatch) {
+        res.status(401);
+        throw new Error('Incorrect password');
+    }
+
+    // Perform database reset
+    try {
+        // Delete all students
+        const studentsDeleted = await Student.deleteMany({});
+
+        // Delete all expenditures
+        const expendituresDeleted = await Expenditure.deleteMany({});
+
+        // Delete all fee ledger entries
+        const feeLedgerDeleted = await FeeLedger.deleteMany({});
+
+        // Delete all payment categories
+        const categoriesDeleted = await PaymentCategory.deleteMany({});
+
+        console.log(`[DATABASE RESET] Performed by: ${admin.email} at ${new Date().toISOString()}`);
+        console.log(`  - Students deleted: ${studentsDeleted.deletedCount}`);
+        console.log(`  - Expenditures deleted: ${expendituresDeleted.deletedCount}`);
+        console.log(`  - Fee Ledger entries deleted: ${feeLedgerDeleted.deletedCount}`);
+        console.log(`  - Payment categories deleted: ${categoriesDeleted.deletedCount}`);
+
+        res.status(200).json({
+            success: true,
+            message: 'Database reset successfully. All student and transaction data has been deleted.',
+            data: {
+                studentsDeleted: studentsDeleted.deletedCount,
+                expendituresDeleted: expendituresDeleted.deletedCount,
+                feeLedgerDeleted: feeLedgerDeleted.deletedCount,
+                categoriesDeleted: categoriesDeleted.deletedCount,
+                resetAt: new Date().toISOString(),
+                resetBy: admin.email
+            }
+        });
+    } catch (error) {
+        console.error('[DATABASE RESET ERROR]', error);
+        res.status(500);
+        throw new Error('Failed to reset database. Please try again.');
+    }
+});
+
 module.exports = {
     checkSetupStatus,
     loginAdmin,
@@ -485,6 +570,7 @@ module.exports = {
     updateProfile,
     forgotPassword,
     verifyOtp,
-    resetPassword
+    resetPassword,
+    resetDatabase
 };
 

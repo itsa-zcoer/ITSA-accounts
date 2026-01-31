@@ -16,7 +16,8 @@ const {
     updateProfile,
     forgotPassword,
     verifyOtp,
-    resetPassword
+    resetPassword,
+    resetDatabase
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { loginLimiter, otpLimiter, forgotPasswordLimiter } = require('../middleware/rateLimitMiddleware');
@@ -120,5 +121,19 @@ router.put('/change-password', protect, changePassword);
  */
 router.put('/update-profile', protect, updateProfile);
 
+/**
+ * @route   POST /api/auth/reset-database
+ * @desc    Reset entire database (dangerous operation)
+ * @access  Private
+ * 
+ * Request Body:
+ * {
+ *   "password": "admin_password",
+ *   "confirmationPhrase": "DELETE EVERYTHING"
+ * }
+ */
+router.post('/reset-database', protect, resetDatabase);
+
 module.exports = router;
+
 

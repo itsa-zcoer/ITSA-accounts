@@ -49,6 +49,7 @@ export const authAPI = {
     forgotPassword: () => api.post('/auth/forgot-password'),
     verifyOtp: (otp) => api.post('/auth/verify-otp', { otp }),
     resetPassword: (newPassword) => api.post('/auth/reset-password', { newPassword }),
+    resetDatabase: (data) => api.post('/auth/reset-database', data),
 };
 
 // ============================================
