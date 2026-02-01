@@ -352,7 +352,7 @@ const StudentFeesLedger = () => {
             const allData = response.data.data.entries;
 
             const wsData = [
-                ['FEE RECORDS'],
+                ['COMMON FEES'],
                 [`Generated: ${new Date().toLocaleString('en-IN')}`],
                 [],
                 ['Roll No', 'PRN', 'Name', 'Class', 'Division', 'Category', 'Total', 'Paid', 'Remaining', 'Status']
@@ -390,9 +390,9 @@ const StudentFeesLedger = () => {
                     <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                         <Link to="/dashboard" className="hover:text-primary-600">Dashboard</Link>
                         <span>/</span>
-                        <span className="text-gray-700">Fee Records</span>
+                        <span className="text-gray-700">Common Fees</span>
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-800">Fee Records</h1>
+                    <h1 className="text-2xl font-bold text-gray-800">Common Fees</h1>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     <button onClick={() => setShowGenerateModal(true)}

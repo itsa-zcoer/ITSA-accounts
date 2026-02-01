@@ -32,7 +32,7 @@ const Navbar = () => {
     const navLinks = [
         { path: '/dashboard', label: 'Dashboard', icon: FiHome },
         { path: '/admin/students', label: 'Students', icon: FiUsers },
-        { path: '/admin/fees-ledger', label: 'Fee Records', icon: FiFileText },
+        { path: '/admin/fees-ledger', label: 'Common Fees', icon: FiFileText },
         { path: '/expenditure', label: 'Add Expense', icon: FaRupeeSign },
         { path: '/categories', label: 'Categories', icon: FiTag },
         { path: '/admin/transactions', label: 'Transactions', icon: FiFileText },

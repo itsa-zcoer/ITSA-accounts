@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { studentManagementAPI, studentsAPI } from '../services/api';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
@@ -21,6 +21,7 @@ import {
 import { BiRupee } from 'react-icons/bi';
 
 const StudentManagement = () => {
+    const navigate = useNavigate();
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -116,9 +117,8 @@ const StudentManagement = () => {
     };
 
     const handleSelectStudent = (student) => {
-        setSearchQuery(student.name);
-        setFilters(prev => ({ ...prev, search: student.prn, page: 1 }));
         setShowDropdown(false);
+        navigate(`/student/${student.prn}`);
     };
 
     const handleSearchSubmit = (e) => {

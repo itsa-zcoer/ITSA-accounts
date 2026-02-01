@@ -31,7 +31,7 @@ const TeamMemberCard = ({ name, image, github, email, linkedin }) => (
             </div>
 
             <a href={linkedin || "#"} target="_blank" rel="noopener noreferrer" className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
-                View profile
+                linkedin profile
             </a>
         </div>
     </div>

@@ -240,7 +240,7 @@ const Dashboard = () => {
                               mb-3 group-hover:scale-110 transition-transform">
                                 <FiFileText className="w-6 h-6 text-white" />
                             </div>
-                            <span className="text-sm font-medium text-secondary-800">Fee Records</span>
+                            <span className="text-sm font-medium text-secondary-800">Common Fees</span>
                         </Link>
 
                         <Link
