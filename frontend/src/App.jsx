@@ -10,7 +10,7 @@ import Loading from './components/Loading';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import UploadCSV from './pages/UploadCSV';
-import SearchStudent from './pages/SearchStudent';
+
 import StudentDetails from './pages/StudentDetails';
 import AddPayment from './pages/AddPayment';
 import AddExpenditure from './pages/AddExpenditure';
@@ -94,16 +94,7 @@ function App() {
                 }
             />
 
-            <Route
-                path="/search"
-                element={
-                    <ProtectedRoute>
-                        <AuthenticatedLayout>
-                            <SearchStudent />
-                        </AuthenticatedLayout>
-                    </ProtectedRoute>
-                }
-            />
+
 
             <Route
                 path="/student/:prn"

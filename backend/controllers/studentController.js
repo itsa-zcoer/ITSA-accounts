@@ -295,7 +295,8 @@ const searchStudents = asyncHandler(async (req, res) => {
     const students = await Student.find({
         $or: [
             { prn: { $regex: escapedQuery, $options: 'i' } },
-            { name: { $regex: escapedQuery, $options: 'i' } }
+            { name: { $regex: escapedQuery, $options: 'i' } },
+            { rollNo: { $regex: escapedQuery, $options: 'i' } }
         ]
     })
         .limit(limit)
@@ -755,7 +756,8 @@ const getAllStudentsAdvanced = asyncHandler(async (req, res) => {
     if (search) {
         matchConditions.$or = [
             { prn: { $regex: search, $options: 'i' } },
-            { name: { $regex: search, $options: 'i' } }
+            { name: { $regex: search, $options: 'i' } },
+            { rollNo: { $regex: search, $options: 'i' } }
         ];
     }
 

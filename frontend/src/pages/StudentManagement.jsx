@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { studentManagementAPI } from '../services/api';
+import { studentManagementAPI, studentsAPI } from '../services/api';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
 import {
@@ -15,7 +15,8 @@ import {
     FiAlertTriangle,
     FiArrowUp,
     FiArrowDown,
-    FiUpload
+    FiUpload,
+    FiUser
 } from 'react-icons/fi';
 import { BiRupee } from 'react-icons/bi';
 
@@ -32,6 +33,13 @@ const StudentManagement = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
+
+    // Search State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const searchWrapperRef = useRef(null);
 
     const [bulkDeleteYear, setBulkDeleteYear] = useState('');
     const [bulkDeleteDivision, setBulkDeleteDivision] = useState('');
@@ -66,6 +74,63 @@ const StudentManagement = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Debounce search input
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchQuery.trim()) {
+                fetchSuggestions(searchQuery);
+            } else {
+                setSuggestions([]);
+            }
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const fetchSuggestions = async (query) => {
+        try {
+            setIsSearching(true);
+            const response = await studentsAPI.search(query);
+            setSuggestions(response.data.data);
+            if (response.data.data.length > 0) {
+                setShowDropdown(true);
+            }
+        } catch (err) {
+            console.error('Failed to fetch suggestions', err);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleSelectStudent = (student) => {
+        setSearchQuery(student.name);
+        setFilters(prev => ({ ...prev, search: student.prn, page: 1 }));
+        setShowDropdown(false);
+    };
+
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        setFilters(prev => ({ ...prev, search: searchQuery, page: 1 }));
+        setShowDropdown(false);
+    };
+
+    const clearSearch = () => {
+        setSearchQuery('');
+        setFilters(prev => ({ ...prev, search: '', page: 1 }));
+        setSuggestions([]);
     };
 
     const handleFilterChange = (e) => {
@@ -185,6 +250,64 @@ const StudentManagement = () => {
                 </div>
             </div>
 
+            {/* Search Bar */}
+            <div className="mb-6 relative max-w-2xl" ref={searchWrapperRef}>
+                <form onSubmit={handleSearchSubmit}>
+                    <div className="relative">
+                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setShowDropdown(true);
+                            }}
+                            onFocus={() => setShowDropdown(true)}
+                            placeholder="Search by Name, PRN, or Roll No..."
+                            className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={clearSearch}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                                <FiX />
+                            </button>
+                        )}
+                    </div>
+                </form>
+
+                {/* Autocomplete Dropdown */}
+                {showDropdown && searchQuery.trim() && (suggestions.length > 0 || isSearching) && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 max-h-80 overflow-y-auto z-50">
+                        {isSearching ? (
+                            <div className="p-4 text-center text-gray-500">Searching...</div>
+                        ) : (
+                            <ul>
+                                {suggestions.map((s) => (
+                                    <li
+                                        key={s.prn}
+                                        onClick={() => handleSelectStudent(s)}
+                                        className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
+                                    >
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <p className="font-medium text-gray-800">{s.name}</p>
+                                                <p className="text-xs text-primary-600 font-mono">{s.prn}</p>
+                                            </div>
+                                            <div className="text-right text-xs text-gray-500">
+                                                <p>{s.year} - {s.division}</p>
+                                            </div>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
+            </div>
+
             {/* Messages */}
             {error && <ErrorMessage message={error} onClose={() => setError('')} />}
             {success && (
@@ -215,14 +338,7 @@ const StudentManagement = () => {
                             </select>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Search</label>
-                            <div className="relative">
-                                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input type="text" name="search" value={filters.search} onChange={handleFilterChange}
-                                    placeholder="PRN or Name" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg" />
-                            </div>
-                        </div>
+
                         <div className="flex items-end">
                             <button onClick={fetchStudents}
                                 className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
