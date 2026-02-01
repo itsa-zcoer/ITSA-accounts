@@ -12,16 +12,7 @@ const PaymentCategory = require('../models/PaymentCategory');
 const asyncHandler = require('express-async-handler');
 const { sendPaymentReceiptEmail } = require('../utils/emailService');
 
-// ===========================================
-// Generate receipt number
-// ===========================================
-const generateReceiptNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `RCP${year}${month}${random}`;
-};
+const { generateReceiptNumber } = require('../utils/receiptGenerator');
 
 /**
  * @desc    Get all ledger entries with filters

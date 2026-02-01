@@ -13,6 +13,7 @@ const FeeLedger = require('../models/FeeLedger');
 const PaymentCategory = require('../models/PaymentCategory');
 const { asyncHandler } = require('../middleware/errorMiddleware');
 const { sendPaymentReceiptEmail } = require('../utils/emailService');
+const { generateReceiptNumber } = require('../utils/receiptGenerator');
 
 /**
  * @desc    Upload students from CSV file
@@ -359,11 +360,8 @@ const addFineToStudent = asyncHandler(async (req, res) => {
         throw new Error(`Student with PRN ${prn.toUpperCase()} not found`);
     }
 
-    // Generate receipt number: RCP-YYYYMMDD-XXXXX (random 5 digits)
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    const receiptNumber = `RCP-${dateStr}-${randomNum}`;
+    // Generate standardized receipt number
+    const receiptNumber = generateReceiptNumber();
 
     // Add payment to student's fines array
     const newPayment = {
