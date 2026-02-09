@@ -10,7 +10,6 @@ import {
     FiCheck,
     FiPlus,
     FiTag,
-    FiBook,
     FiEdit3,
     FiTrendingUp,
     FiClock,
@@ -44,7 +43,9 @@ const AddExpenditure = () => {
         amount: '',
         description: '',
         category: 'other',
-        department: '',
+        customCategory: '',
+        senderName: '',
+        receiverName: '',
         date: getLocalDateTimeString(),
         notes: ''
     });
@@ -101,6 +102,21 @@ const AddExpenditure = () => {
             return;
         }
 
+        if (formData.category === 'other' && !formData.customCategory.trim()) {
+            setError('Please enter a custom category name');
+            return;
+        }
+
+        if (!formData.senderName.trim()) {
+            setError('Please enter sender name');
+            return;
+        }
+
+        if (!formData.receiverName.trim()) {
+            setError('Please enter receiver name');
+            return;
+        }
+
         setSubmitting(true);
         setError('');
         setSuccess('');
@@ -109,8 +125,11 @@ const AddExpenditure = () => {
             await expenditureAPI.add({
                 amount: parseFloat(formData.amount),
                 description: formData.description.trim(),
-                category: formData.category,
-                department: formData.department.trim() || undefined,
+                category: formData.category === 'other' && formData.customCategory.trim() 
+                    ? formData.customCategory.trim() 
+                    : formData.category,
+                senderName: formData.senderName.trim(),
+                receiverName: formData.receiverName.trim(),
                 date: formData.date,
                 notes: formData.notes.trim() || undefined
             });
@@ -121,7 +140,9 @@ const AddExpenditure = () => {
                 amount: '',
                 description: '',
                 category: 'other',
-                department: '',
+                customCategory: '',
+                senderName: '',
+                receiverName: '',
                 date: getLocalDateTimeString(),
                 notes: ''
             });
@@ -171,7 +192,17 @@ const AddExpenditure = () => {
     };
 
     const getCategoryInfo = (categoryValue) => {
-        return categories.find(c => c.value === categoryValue) || categories[5];
+        const predefinedCategory = categories.find(c => c.value === categoryValue);
+        if (predefinedCategory) {
+            return predefinedCategory;
+        }
+        // For custom categories, return a custom info object with the actual category name
+        return {
+            value: categoryValue,
+            label: categoryValue.charAt(0).toUpperCase() + categoryValue.slice(1),
+            icon: FiMoreHorizontal,
+            color: 'gray'
+        };
     };
 
     const getCategoryStyles = (category) => {
@@ -357,47 +388,92 @@ const AddExpenditure = () => {
                                             );
                                         })}
                                     </div>
+
+                                    {/* Custom Category Input - Only shown when Other is selected */}
+                                    {formData.category === 'other' && (
+                                        <div className="mt-3">
+                                            <div className="relative">
+                                                <FiTag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    id="customCategory"
+                                                    name="customCategory"
+                                                    value={formData.customCategory}
+                                                    onChange={handleChange}
+                                                    placeholder="Enter custom category"
+                                                    className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
+                                                           focus:ring-primary-500 focus:border-primary-500 text-gray-800 text-sm
+                                                           placeholder-gray-400 transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Department & Date Row */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Department
-                                        </label>
-                                        <div className="relative">
-                                            <FiBook className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                id="department"
-                                                name="department"
-                                                value={formData.department}
-                                                onChange={handleChange}
-                                                placeholder="Optional"
-                                                className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
-                                                       focus:ring-primary-500 focus:border-primary-500 text-gray-800 text-sm
-                                                       placeholder-gray-400 transition-all"
-                                            />
+                                {/* Transaction Details Section */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                                        Transaction Details
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label htmlFor="senderName" className="block text-xs text-gray-500 mb-1.5">
+                                                Sender Name <span className="text-red-500">*</span>
+                                            </label>
+                                            <div className="relative">
+                                                <FiFileText className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    id="senderName"
+                                                    name="senderName"
+                                                    value={formData.senderName}
+                                                    onChange={handleChange}
+                                                    placeholder="Sender name"
+                                                    className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
+                                                           focus:ring-primary-500 focus:border-primary-500 text-gray-800 text-sm
+                                                           placeholder-gray-400 transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="receiverName" className="block text-xs text-gray-500 mb-1.5">
+                                                Receiver Name <span className="text-red-500">*</span>
+                                            </label>
+                                            <div className="relative">
+                                                <FiFileText className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                                <input
+                                                    type="text"
+                                                    id="receiverName"
+                                                    name="receiverName"
+                                                    value={formData.receiverName}
+                                                    onChange={handleChange}
+                                                    placeholder="Receiver name"
+                                                    className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
+                                                           focus:ring-primary-500 focus:border-primary-500 text-gray-800 text-sm
+                                                           placeholder-gray-400 transition-all"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                                            Date & Time
-                                        </label>
-                                        <div className="relative">
-                                            <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <input
-                                                type="datetime-local"
-                                                id="date"
-                                                name="date"
-                                                value={formData.date}
-                                                onChange={handleChange}
-                                                max={getLocalDateTimeString()}
-                                                className="w-full pl-11 pr-2 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
-                                                       focus:ring-primary-500 focus:border-primary-500 text-gray-800 text-sm transition-all"
-                                            />
-                                        </div>
+                                {/* Date Field */}
+                                <div>
+                                    <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
+                                        Date & Time
+                                    </label>
+                                    <div className="relative">
+                                        <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            type="datetime-local"
+                                            id="date"
+                                            name="date"
+                                            value={formData.date}
+                                            onChange={handleChange}
+                                            max={getLocalDateTimeString()}
+                                            className="w-full pl-11 pr-2 py-2.5 border border-gray-200 rounded-xl focus:ring-2 
+                                                   focus:ring-primary-500 focus:border-primary-500 text-gray-800 text-sm transition-all"
+                                        />
                                     </div>
                                 </div>
 

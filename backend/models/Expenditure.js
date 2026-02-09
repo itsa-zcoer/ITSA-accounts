@@ -23,15 +23,23 @@ const expenditureSchema = new mongoose.Schema({
         maxlength: [500, 'Description cannot exceed 500 characters']
     },
 
-    // Category of expenditure (optional)
+    // Category of expenditure (optional) - allows both predefined and custom categories
     category: {
         type: String,
         trim: true,
-        enum: {
-            values: ['infrastructure', 'equipment', 'stationery', 'events', 'maintenance', 'other'],
-            message: 'Invalid category'
-        },
         default: 'other'
+    },
+
+    // Sender name (who sent / paid)
+    senderName: {
+        type: String,
+        trim: true
+    },
+
+    // Receiver name (who received)
+    receiverName: {
+        type: String,
+        trim: true
     },
 
     // Department that made the expenditure (optional)
