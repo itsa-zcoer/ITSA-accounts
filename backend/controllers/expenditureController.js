@@ -9,6 +9,7 @@
 const Expenditure = require('../models/Expenditure');
 const Student = require('../models/Student');
 const { asyncHandler } = require('../middleware/errorMiddleware');
+const { generateReceiptNumber } = require('../utils/receiptGenerator');
 
 /**
  * @desc    Add new expenditure
@@ -16,7 +17,7 @@ const { asyncHandler } = require('../middleware/errorMiddleware');
  * @access  Private
  */
 const addExpenditure = asyncHandler(async (req, res) => {
-    const { amount, description, category, department, date, receiptNumber, notes } = req.body;
+    const { amount, description, category, department, date, notes, senderName, receiverName } = req.body;
 
     // Validate required fields
     if (!amount || !description) {
@@ -30,14 +31,19 @@ const addExpenditure = asyncHandler(async (req, res) => {
         throw new Error('Amount must be a positive number');
     }
 
+    // Auto-generate receipt number for expenditure (use EXP prefix)
+    const expReceiptNumber = `EXP-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(10000 + Math.random() * 90000)}`;
+
     // Create expenditure record
     const expenditure = await Expenditure.create({
         amount: Number(amount),
         description: description.trim(),
         category: category || 'other',
         department: department?.trim(),
+        senderName: senderName?.trim(),
+        receiverName: receiverName?.trim(),
         date: date ? new Date(date) : new Date(),
-        receiptNumber: receiptNumber?.trim(),
+        receiptNumber: expReceiptNumber,
         notes: notes?.trim(),
         addedBy: req.admin._id
     });
