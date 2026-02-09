@@ -31,7 +31,7 @@ const ExpenseReceiptModal = ({ isOpen, onClose, expense }) => {
         return `
             <div style="font-family: 'Segoe UI', Arial, sans-serif; width: 100%; max-width: 400px; margin: 0 auto;">
                 <!-- Header Banner -->
-                <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
+                <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); padding: 32px 24px; text-align: center; border-radius: 12px 12px 0 0;">
                     <div style="width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
                         <span style="font-size: 28px; color: white; font-weight: bold;">₹</span>
                     </div>
@@ -90,7 +90,7 @@ const ExpenseReceiptModal = ({ isOpen, onClose, expense }) => {
                                 <td colspan="2" style="vertical-align: top;">
                                     <p style="margin: 0; font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Transaction Type</p>
                                     <div style="margin-top: 8px;">
-                                        <span style="display: inline-block; padding: 6px 14px; background: #fee2e2; color: #dc2626; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                        <span style="display: inline-block; padding: 6px 14px; background: #ccfbf1; color: #0d9488; border-radius: 20px; font-size: 12px; font-weight: 600;">
                                             💸 Expenditure
                                         </span>
                                     </div>
@@ -108,9 +108,9 @@ const ExpenseReceiptModal = ({ isOpen, onClose, expense }) => {
                     ` : ''}
                     
                     <!-- Amount Section -->
-                    <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); padding: 32px 24px; text-align: center;">
+                    <div style="background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%); padding: 32px 24px; text-align: center;">
                         <p style="margin: 0; font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Amount Spent</p>
-                        <p style="margin: 10px 0 0 0; font-size: 42px; color: #dc2626; font-weight: 700;">${formatCurrency(expense.amount)}</p>
+                        <p style="margin: 10px 0 0 0; font-size: 42px; color: #0d9488; font-weight: 700;">${formatCurrency(expense.amount)}</p>
                     </div>
                     
                 </div>
@@ -191,12 +191,12 @@ const ExpenseReceiptModal = ({ isOpen, onClose, expense }) => {
                 {/* Receipt Preview */}
                 <div className="overflow-y-auto max-h-[60vh] p-4 bg-gray-50" ref={receiptRef}>
                     {/* Header Banner */}
-                    <div className="bg-gradient-to-br from-red-600 to-red-500 rounded-t-xl p-6 text-center">
+                    <div className="bg-gradient-to-br from-teal-600 to-teal-500 rounded-t-xl p-6 text-center">
                         <div className="w-14 h-14 bg-white/20 rounded-full mx-auto mb-3 flex items-center justify-center">
                             <span className="text-2xl text-white">₹</span>
                         </div>
                         <h3 className="text-white font-bold text-lg">ITSA Accounts</h3>
-                        <p className="text-red-100 text-sm">Official Expense Receipt</p>
+                        <p className="text-teal-100 text-sm">Official Expense Receipt</p>
                         <div className="mt-4 inline-block bg-white/20 px-4 py-2 rounded-full">
                             <span className="text-white text-sm font-semibold">{expense.receiptNumber}</span>
                         </div>
@@ -242,9 +242,9 @@ const ExpenseReceiptModal = ({ isOpen, onClose, expense }) => {
                         )}
 
                         {/* Amount */}
-                        <div className="bg-gradient-to-r from-red-50 to-red-100/50 p-6 text-center">
+                        <div className="bg-gradient-to-r from-teal-50 to-teal-100/50 p-6 text-center">
                             <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Amount Spent</p>
-                            <p className="text-3xl font-bold text-red-600 mt-2">{formatCurrency(expense.amount)}</p>
+                            <p className="text-3xl font-bold text-teal-600 mt-2">{formatCurrency(expense.amount)}</p>
                         </div>
                     </div>
                 </div>
@@ -253,7 +253,7 @@ const ExpenseReceiptModal = ({ isOpen, onClose, expense }) => {
                 <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
                     <button
                         onClick={handleDownload}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
                     >
                         <FiDownload className="w-4 h-4" />
                         Download PDF
