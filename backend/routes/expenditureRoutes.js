@@ -15,6 +15,7 @@ const {
     getExpenditureById,
     updateExpenditure,
     deleteExpenditure,
+    bulkDeleteExpenditures,
     getMonthlyReport,
     getExpenditureReport
 } = require('../controllers/expenditureController');
@@ -115,6 +116,18 @@ router.get('/:id', getExpenditureById);
  * @access  Private
  */
 router.put('/:id', updateExpenditure);
+
+/**
+ * @route   DELETE /api/expenditure/bulk-delete
+ * @desc    Bulk delete multiple expenditures
+ * @access  Private
+ * 
+ * Request Body:
+ * {
+ *   "ids": ["id1", "id2", "id3"]
+ * }
+ */
+router.delete('/bulk-delete', bulkDeleteExpenditures);
 
 /**
  * @route   DELETE /api/expenditure/:id

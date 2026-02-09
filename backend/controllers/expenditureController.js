@@ -275,6 +275,30 @@ const deleteExpenditure = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Bulk delete expenditures
+ * @route   DELETE /api/expenditure/bulk-delete
+ * @access  Private
+ */
+const bulkDeleteExpenditures = asyncHandler(async (req, res) => {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        res.status(400);
+        throw new Error('Please provide an array of expenditure IDs to delete');
+    }
+
+    const result = await Expenditure.deleteMany({ _id: { $in: ids } });
+
+    res.status(200).json({
+        success: true,
+        message: `Successfully deleted ${result.deletedCount} expenditure(s)`,
+        data: {
+            deletedCount: result.deletedCount
+        }
+    });
+});
+
+/**
  * @desc    Get monthly financial report
  * @route   GET /api/expenditure/report/monthly
  * @access  Private
@@ -496,6 +520,7 @@ module.exports = {
     getExpenditureById,
     updateExpenditure,
     deleteExpenditure,
+    bulkDeleteExpenditures,
     getMonthlyReport,
     getExpenditureReport
 };

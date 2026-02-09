@@ -84,6 +84,7 @@ export const expenditureAPI = {
     getById: (id) => api.get(`/expenditure/${id}`),
     update: (id, data) => api.put(`/expenditure/${id}`, data),
     delete: (id) => api.delete(`/expenditure/${id}`),
+    bulkDelete: (ids) => api.delete('/expenditure/bulk-delete', { data: { ids } }),
     getMonthlyReport: (year) => api.get('/expenditure/report/monthly', { params: { year } }),
     getReport: (params) => api.get('/expenditure/report', { params }),
 };

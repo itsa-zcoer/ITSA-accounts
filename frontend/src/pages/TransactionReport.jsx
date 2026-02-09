@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { reportsAPI, studentsAPI, expenditureAPI } from '../services/api';
+import { reportsAPI, studentsAPI, expenditureAPI, authAPI } from '../services/api';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
 import ReceiptModal from '../components/ReceiptModal';
@@ -20,7 +20,11 @@ import {
     FiX,
     FiFileText,
     FiDollarSign,
-    FiMinusCircle
+    FiMinusCircle,
+    FiTrash2,
+    FiLock,
+    FiCheckSquare,
+    FiSquare
 } from 'react-icons/fi';
 
 const TransactionReport = () => {
@@ -37,6 +41,16 @@ const TransactionReport = () => {
     const [expenditures, setExpenditures] = useState([]);
     const [expenditureLoading, setExpenditureLoading] = useState(true);
     const [expenditureSummary, setExpenditureSummary] = useState({});
+
+    // Delete mode state
+    const [deleteMode, setDeleteMode] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [passwordVerifying, setPasswordVerifying] = useState(false);
+    const [selectedDeleteIds, setSelectedDeleteIds] = useState([]);
+    const [deleteSuccess, setDeleteSuccess] = useState('');
+    const [deleting, setDeleting] = useState(false);
 
     const [error, setError] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -202,6 +216,79 @@ const TransactionReport = () => {
             category: '', year: '', month: '', fromDate: '', toDate: '', minAmount: '', maxAmount: '',
             sortBy: 'date', sortOrder: 'desc', page: 1, limit: 100000
         });
+    };
+
+    // Delete mode functions
+    const handleDeleteButtonClick = () => {
+        setShowPasswordModal(true);
+        setDeletePassword('');
+        setPasswordError('');
+    };
+
+    const handlePasswordVerify = async () => {
+        if (!deletePassword.trim()) {
+            setPasswordError('Please enter your password');
+            return;
+        }
+
+        try {
+            setPasswordVerifying(true);
+            setPasswordError('');
+            await authAPI.verifyPassword(deletePassword);
+            setShowPasswordModal(false);
+            setDeleteMode(true);
+            setSelectedDeleteIds([]);
+            setDeletePassword('');
+        } catch (err) {
+            setPasswordError(err.response?.data?.message || 'Incorrect password. Please try again.');
+        } finally {
+            setPasswordVerifying(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteMode(false);
+        setSelectedDeleteIds([]);
+        setDeleteSuccess('');
+    };
+
+    const toggleSelectExpenditure = (id) => {
+        setSelectedDeleteIds(prev => 
+            prev.includes(id) 
+                ? prev.filter(x => x !== id) 
+                : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedDeleteIds.length === expenditures.length) {
+            setSelectedDeleteIds([]);
+        } else {
+            setSelectedDeleteIds(expenditures.map(e => e._id));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedDeleteIds.length === 0) {
+            setError('Please select at least one expenditure to delete');
+            return;
+        }
+
+        try {
+            setDeleting(true);
+            const response = await expenditureAPI.bulkDelete(selectedDeleteIds);
+            setDeleteSuccess(`Successfully deleted ${response.data.data.deletedCount} expenditure(s)`);
+            setSelectedDeleteIds([]);
+            setDeleteMode(false);
+            // Refresh expenditures
+            fetchExpenditures();
+            // Clear success message after 3 seconds
+            setTimeout(() => setDeleteSuccess(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to delete expenditures');
+        } finally {
+            setDeleting(false);
+        }
     };
 
     const getIncomeReportPeriod = () => {
@@ -880,6 +967,16 @@ const TransactionReport = () => {
             {/* ==================== EXPENDITURE SECTION ==================== */}
             {activeTab === 'expenditure' && (
                 <div className="space-y-6">
+                    {/* Delete Success Message */}
+                    {deleteSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
+                            <span>{deleteSuccess}</span>
+                            <button onClick={() => setDeleteSuccess('')} className="text-green-700 hover:text-green-900">
+                                <FiX className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Expenditure Header & Actions */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -887,27 +984,50 @@ const TransactionReport = () => {
                             Expenditure Transactions
                         </h2>
                         <div className="flex gap-2 flex-wrap">
-                            <button onClick={() => setShowFilters(!showFilters)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                                <FiFilter /> Filters {showFilters ? <FiChevronUp /> : <FiChevronDown />}
-                            </button>
-                            <button onClick={exportExpenditureToExcel}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                <FiDownload /> Excel
-                            </button>
-                            <button onClick={exportExpenditureToPDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                                <FiDownload /> PDF
-                            </button>
-                            <Link to="/admin/expenditure"
-                                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
-                                Add Expense
-                            </Link>
+                            {deleteMode ? (
+                                <>
+                                    <span className="flex items-center gap-2 px-4 py-2 text-gray-600">
+                                        {selectedDeleteIds.length} selected
+                                    </span>
+                                    <button onClick={handleBulkDelete}
+                                        disabled={selectedDeleteIds.length === 0 || deleting}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {deleting ? 'Deleting...' : 'Confirm Delete'}
+                                    </button>
+                                    <button onClick={handleCancelDelete}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                        Cancel
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => setShowFilters(!showFilters)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                        <FiFilter /> Filters {showFilters ? <FiChevronUp /> : <FiChevronDown />}
+                                    </button>
+                                    <button onClick={exportExpenditureToExcel}
+                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        <FiDownload /> Excel
+                                    </button>
+                                    <button onClick={exportExpenditureToPDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                        <FiDownload /> PDF
+                                    </button>
+                                    <Link to="/expenditure"
+                                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+                                        Add Expense
+                                    </Link>
+                                    <button onClick={handleDeleteButtonClick}
+                                        className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
+                                        <FiTrash2 /> Delete
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
 
                     {/* Expenditure Filters */}
-                    {showFilters && (
+                    {showFilters && !deleteMode && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="font-semibold">Expenditure Filters</h3>
@@ -975,8 +1095,19 @@ const TransactionReport = () => {
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className="bg-red-50">
+                                    <thead className="bg-teal-50">
                                         <tr>
+                                            {deleteMode && (
+                                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-12">
+                                                    <button onClick={toggleSelectAll} className="p-1 hover:bg-teal-100 rounded">
+                                                        {selectedDeleteIds.length === expenditures.length && expenditures.length > 0 ? (
+                                                            <FiCheckSquare className="w-5 h-5 text-teal-600" />
+                                                        ) : (
+                                                            <FiSquare className="w-5 h-5 text-gray-400" />
+                                                        )}
+                                                    </button>
+                                                </th>
+                                            )}
                                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer"
                                                 onClick={() => handleExpenditureSort('date')}>
                                                 <div className="flex items-center gap-1">
@@ -1000,14 +1131,25 @@ const TransactionReport = () => {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {expenditures.length === 0 ? (
-                                            <tr><td colSpan="9" className="px-4 py-12 text-center text-gray-500">No expenditures found</td></tr>
+                                            <tr><td colSpan={deleteMode ? "10" : "9"} className="px-4 py-12 text-center text-gray-500">No expenditures found</td></tr>
                                         ) : (
                                             expenditures.map((e, idx) => (
-                                                <tr key={e._id || idx} className="hover:bg-red-50/30">
+                                                <tr key={e._id || idx} className={`hover:bg-teal-50/30 ${selectedDeleteIds.includes(e._id) ? 'bg-red-50' : ''}`}>
+                                                    {deleteMode && (
+                                                        <td className="px-4 py-3 text-center">
+                                                            <button onClick={() => toggleSelectExpenditure(e._id)} className="p-1 hover:bg-teal-100 rounded">
+                                                                {selectedDeleteIds.includes(e._id) ? (
+                                                                    <FiCheckSquare className="w-5 h-5 text-red-600" />
+                                                                ) : (
+                                                                    <FiSquare className="w-5 h-5 text-gray-400" />
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                    )}
                                                     <td className="px-4 py-3 text-sm text-gray-700">{formatDate(e.date || e.createdAt)}</td>
                                                     <td className="px-4 py-3 text-gray-600 font-mono text-xs">
                                                         {e.receiptNumber ? (
-                                                            <span className="bg-red-100 text-red-700 px-2 py-1 rounded border border-red-200">
+                                                            <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded border border-teal-200">
                                                                 {e.receiptNumber}
                                                             </span>
                                                         ) : '-'}
@@ -1016,14 +1158,14 @@ const TransactionReport = () => {
                                                     <td className="px-4 py-3 text-sm text-gray-800 font-medium max-w-xs truncate">{e.description}</td>
                                                     <td className="px-4 py-3 text-sm text-gray-600">{e.senderName || '-'}</td>
                                                     <td className="px-4 py-3 text-sm text-gray-600">{e.receiverName || '-'}</td>
-                                                    <td className="px-4 py-3 text-sm text-right font-semibold text-red-600">
+                                                    <td className="px-4 py-3 text-sm text-right font-semibold text-teal-600">
                                                         -{formatCurrency(e.amount)}
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">{e.notes || '-'}</td>
                                                     <td className="px-4 py-3 text-center">
                                                         <button
                                                             onClick={() => setSelectedExpense(e)}
-                                                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors border border-red-200"
+                                                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors border border-teal-200"
                                                             title="View/Download Receipt"
                                                         >
                                                             <FiFileText className="w-3.5 h-3.5" />
@@ -1058,6 +1200,92 @@ const TransactionReport = () => {
                     onClose={() => setSelectedExpense(null)}
                     expense={selectedExpense}
                 />
+            )}
+
+            {/* Password Verification Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-slideUp">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center">
+                                    <FiLock className="w-6 h-6 text-rose-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-semibold text-gray-800">Security Verification</h2>
+                                    <p className="text-sm text-gray-500">Enter your password to proceed</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowPasswordModal(false);
+                                    setDeletePassword('');
+                                    setPasswordError('');
+                                }}
+                                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <FiX className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Account Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={deletePassword}
+                                    onChange={(e) => {
+                                        setDeletePassword(e.target.value);
+                                        setPasswordError('');
+                                    }}
+                                    onKeyDown={(e) => e.key === 'Enter' && handlePasswordVerify()}
+                                    placeholder="Enter your login password"
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                                        passwordError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                                    }`}
+                                    autoFocus
+                                />
+                                {passwordError && (
+                                    <p className="mt-2 text-sm text-red-600">{passwordError}</p>
+                                )}
+                            </div>
+
+                            <p className="text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                <strong>Note:</strong> This verification ensures only authorized users can delete expenditure records. 
+                                Deleted records cannot be recovered.
+                            </p>
+
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setShowPasswordModal(false);
+                                        setDeletePassword('');
+                                        setPasswordError('');
+                                    }}
+                                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handlePasswordVerify}
+                                    disabled={passwordVerifying || !deletePassword.trim()}
+                                    className="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {passwordVerifying ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Verifying...
+                                        </>
+                                    ) : (
+                                        'Verify & Continue'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
