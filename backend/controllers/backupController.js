@@ -155,7 +155,7 @@ const generateStudentsExcel = async (students) => {
 // ============================================
 const generateStudentsPDF = (students) => {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+        const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 30 });
         const buffers = [];
 
         doc.on('data', (chunk) => buffers.push(chunk));
@@ -163,30 +163,30 @@ const generateStudentsPDF = (students) => {
         doc.on('error', reject);
 
         // Title
-        doc.fontSize(18).font('Helvetica-Bold').fillColor('#1A365D')
+        doc.fontSize(14).font('Helvetica-Bold').fillColor('#1A365D')
             .text('INFORMATION TECHNOLOGY STUDENT ASSOCIATION (ITSA)', { align: 'center' });
-        doc.fontSize(14).fillColor('#2D3748')
+        doc.fontSize(11).fillColor('#2D3748')
             .text('STUDENT RECORDS BACKUP', { align: 'center' });
         doc.moveDown(0.3);
-        doc.fontSize(9).font('Helvetica').fillColor('#718096')
+        doc.fontSize(8).font('Helvetica').fillColor('#718096')
             .text(`Generated on: ${new Date().toLocaleString('en-IN')}  |  Total Students: ${students.length}`, { align: 'center' });
         doc.moveDown(0.8);
 
         // Table
         const tableTop = doc.y;
-        const colWidths = [35, 80, 45, 130, 40, 40, 100, 100, 80, 80];
-        const headers = ['Sr.', 'PRN', 'Roll', 'Name', 'Year', 'Div', 'Department', 'Email', 'Phone', 'Total Paid'];
+        const colWidths = [25, 70, 35, 100, 35, 30, 70, 100, 70];
+        const headers = ['Sr.', 'PRN', 'Roll', 'Name', 'Year', 'Div', 'Department', 'Email', 'Phone'];
         const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
         // Draw header
         let x = doc.page.margins.left;
-        const headerHeight = 22;
+        const headerHeight = 20;
 
         doc.rect(x, tableTop, pageWidth, headerHeight).fill('#1E40AF');
 
         headers.forEach((header, i) => {
-            doc.fontSize(8).font('Helvetica-Bold').fillColor('#FFFFFF')
-                .text(header, x + 3, tableTop + 6, { width: colWidths[i] - 6, align: 'left' });
+            doc.fontSize(7).font('Helvetica-Bold').fillColor('#FFFFFF')
+                .text(header, x + 2, tableTop + 5, { width: colWidths[i] - 4, align: 'left' });
             x += colWidths[i];
         });
 
@@ -194,45 +194,41 @@ const generateStudentsPDF = (students) => {
 
         // Draw rows
         students.forEach((student, index) => {
-            // Check if we need a new page
-            if (y + 18 > doc.page.height - doc.page.margins.bottom) {
+            if (y + 16 > doc.page.height - doc.page.margins.bottom) {
                 doc.addPage();
                 y = doc.page.margins.top;
 
-                // Redraw header on new page
                 x = doc.page.margins.left;
                 doc.rect(x, y, pageWidth, headerHeight).fill('#1E40AF');
                 headers.forEach((header, i) => {
-                    doc.fontSize(8).font('Helvetica-Bold').fillColor('#FFFFFF')
-                        .text(header, x + 3, y + 6, { width: colWidths[i] - 6, align: 'left' });
+                    doc.fontSize(7).font('Helvetica-Bold').fillColor('#FFFFFF')
+                        .text(header, x + 2, y + 5, { width: colWidths[i] - 4, align: 'left' });
                     x += colWidths[i];
                 });
                 y += headerHeight;
             }
 
-            const rowHeight = 16;
+            const rowHeight = 14;
             const bgColor = index % 2 === 0 ? '#F8FAFC' : '#FFFFFF';
             x = doc.page.margins.left;
 
             doc.rect(x, y, pageWidth, rowHeight).fill(bgColor);
 
-            const totalPaid = student.fines ? student.fines.reduce((sum, f) => sum + f.amount, 0) : 0;
             const rowData = [
                 (index + 1).toString(),
                 student.prn || '-',
                 student.rollNo || '-',
-                student.name || '-',
+                (student.name || '-').substring(0, 22),
                 student.year || '-',
                 student.division || '-',
-                student.department || '-',
-                student.email || '-',
+                (student.department || '-').substring(0, 12),
+                (student.email || '-').substring(0, 22),
                 student.phone || '-',
-                formatCurrency(totalPaid),
             ];
 
             rowData.forEach((cell, i) => {
-                doc.fontSize(7).font('Helvetica').fillColor('#374151')
-                    .text(cell, x + 3, y + 4, { width: colWidths[i] - 6, align: 'left', lineBreak: false });
+                doc.fontSize(6).font('Helvetica').fillColor('#374151')
+                    .text(cell, x + 2, y + 3, { width: colWidths[i] - 4, align: 'left', lineBreak: false });
                 x += colWidths[i];
             });
 
@@ -240,10 +236,8 @@ const generateStudentsPDF = (students) => {
         });
 
         // Footer
-        doc.moveDown(1);
-        const footerY = doc.y > doc.page.height - 60 ? doc.page.height - 40 : doc.y + 10;
         doc.fontSize(7).font('Helvetica').fillColor('#718096')
-            .text('Zeal Institute of Technology - ITSA Accounts', doc.page.margins.left, footerY);
+            .text('Zeal Institute of Technology - ITSA Accounts', doc.page.margins.left, doc.page.height - 40);
 
         doc.end();
     });
@@ -354,7 +348,7 @@ const generateExpenditureExcel = async (expenditures) => {
 // ============================================
 const generateExpenditurePDF = (expenditures) => {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+        const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 30 });
         const buffers = [];
 
         doc.on('data', (chunk) => buffers.push(chunk));
@@ -363,46 +357,46 @@ const generateExpenditurePDF = (expenditures) => {
 
         const totalExpenditure = expenditures.reduce((sum, e) => sum + (e.amount || 0), 0);
 
-        doc.fontSize(18).font('Helvetica-Bold').fillColor('#1A365D')
+        doc.fontSize(14).font('Helvetica-Bold').fillColor('#1A365D')
             .text('INFORMATION TECHNOLOGY STUDENT ASSOCIATION (ITSA)', { align: 'center' });
-        doc.fontSize(14).fillColor('#DC2626')
+        doc.fontSize(11).fillColor('#DC2626')
             .text('EXPENDITURE RECORDS BACKUP', { align: 'center' });
         doc.moveDown(0.3);
-        doc.fontSize(9).font('Helvetica').fillColor('#718096')
-            .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total Expenditure: ${formatCurrency(totalExpenditure)}  |  Entries: ${expenditures.length}`, { align: 'center' });
+        doc.fontSize(8).font('Helvetica').fillColor('#718096')
+            .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total: ${formatCurrency(totalExpenditure)}  |  Entries: ${expenditures.length}`, { align: 'center' });
         doc.moveDown(0.8);
 
-        const colWidths = [30, 85, 70, 90, 130, 100, 100, 80];
-        const headers = ['Sr.', 'Date', 'Receipt', 'Category', 'Description', 'Sender', 'Receiver', 'Amount'];
+        const colWidths = [25, 75, 55, 75, 120, 90, 95];
+        const headers = ['Sr.', 'Date', 'Receipt', 'Category', 'Description', 'Receiver', 'Amount'];
         const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
         let x = doc.page.margins.left;
         let y = doc.y;
-        const headerHeight = 22;
+        const headerHeight = 20;
 
         doc.rect(x, y, pageWidth, headerHeight).fill('#DC2626');
         headers.forEach((h, i) => {
-            doc.fontSize(8).font('Helvetica-Bold').fillColor('#FFFFFF')
-                .text(h, x + 3, y + 6, { width: colWidths[i] - 6, align: 'left' });
+            doc.fontSize(7).font('Helvetica-Bold').fillColor('#FFFFFF')
+                .text(h, x + 2, y + 5, { width: colWidths[i] - 4, align: 'left' });
             x += colWidths[i];
         });
         y += headerHeight;
 
         expenditures.forEach((e, idx) => {
-            if (y + 18 > doc.page.height - doc.page.margins.bottom) {
+            if (y + 16 > doc.page.height - doc.page.margins.bottom) {
                 doc.addPage();
                 y = doc.page.margins.top;
                 x = doc.page.margins.left;
                 doc.rect(x, y, pageWidth, headerHeight).fill('#DC2626');
                 headers.forEach((h, i) => {
-                    doc.fontSize(8).font('Helvetica-Bold').fillColor('#FFFFFF')
-                        .text(h, x + 3, y + 6, { width: colWidths[i] - 6, align: 'left' });
+                    doc.fontSize(7).font('Helvetica-Bold').fillColor('#FFFFFF')
+                        .text(h, x + 2, y + 5, { width: colWidths[i] - 4, align: 'left' });
                     x += colWidths[i];
                 });
                 y += headerHeight;
             }
 
-            const rowHeight = 16;
+            const rowHeight = 14;
             const bgColor = idx % 2 === 0 ? '#FEF2F2' : '#FFFFFF';
             x = doc.page.margins.left;
             doc.rect(x, y, pageWidth, rowHeight).fill(bgColor);
@@ -411,25 +405,22 @@ const generateExpenditurePDF = (expenditures) => {
                 (idx + 1).toString(),
                 formatDate(e.date || e.createdAt),
                 e.receiptNumber || '-',
-                e.category || '-',
-                (e.description || '-').substring(0, 40),
-                e.senderName || '-',
-                e.receiverName || '-',
+                (e.category || '-').substring(0, 15),
+                (e.description || '-').substring(0, 30),
+                (e.receiverName || '-').substring(0, 18),
                 formatCurrency(e.amount),
             ];
 
             rowData.forEach((cell, i) => {
-                doc.fontSize(7).font('Helvetica').fillColor('#374151')
-                    .text(cell, x + 3, y + 4, { width: colWidths[i] - 6, align: 'left', lineBreak: false });
+                doc.fontSize(6).font('Helvetica').fillColor('#374151')
+                    .text(cell, x + 2, y + 3, { width: colWidths[i] - 4, align: 'left', lineBreak: false });
                 x += colWidths[i];
             });
             y += rowHeight;
         });
 
-        doc.moveDown(1);
-        const footerY = doc.y > doc.page.height - 40 ? doc.page.height - 40 : doc.y + 10;
         doc.fontSize(7).font('Helvetica').fillColor('#718096')
-            .text('Zeal Institute of Technology - ITSA Accounts', doc.page.margins.left, footerY);
+            .text('Zeal Institute of Technology - ITSA Accounts', doc.page.margins.left, doc.page.height - 40);
 
         doc.end();
     });
@@ -544,7 +535,7 @@ const generateFeeLedgerExcel = async (ledgers) => {
 // ============================================
 const generateFeeLedgerPDF = (ledgers) => {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+        const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 30 });
         const buffers = [];
 
         doc.on('data', (chunk) => buffers.push(chunk));
@@ -553,73 +544,74 @@ const generateFeeLedgerPDF = (ledgers) => {
 
         const totalCollected = ledgers.reduce((sum, l) => sum + (l.paidAmount || 0), 0);
 
-        doc.fontSize(18).font('Helvetica-Bold').fillColor('#1A365D')
+        doc.fontSize(14).font('Helvetica-Bold').fillColor('#1A365D')
             .text('INFORMATION TECHNOLOGY STUDENT ASSOCIATION (ITSA)', { align: 'center' });
-        doc.fontSize(14).fillColor('#D97706')
+        doc.fontSize(11).fillColor('#D97706')
             .text('FEE LEDGER BACKUP', { align: 'center' });
         doc.moveDown(0.3);
-        doc.fontSize(9).font('Helvetica').fillColor('#718096')
+        doc.fontSize(8).font('Helvetica').fillColor('#718096')
             .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Collected: ${formatCurrency(totalCollected)}  |  Records: ${ledgers.length}`, { align: 'center' });
         doc.moveDown(0.8);
 
-        const colWidths = [30, 80, 120, 50, 90, 70, 70, 70, 60, 80];
-        const headers = ['Sr.', 'PRN', 'Name', 'Class', 'Category', 'Total', 'Paid', 'Pending', 'Status', 'Last Pay'];
+        const colWidths = [25, 65, 100, 40, 80, 60, 60, 55, 50];
+        const headers = ['Sr.', 'PRN', 'Name', 'Class', 'Category', 'Total', 'Paid', 'Pending', 'Status'];
         const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
         let x = doc.page.margins.left;
         let y = doc.y;
-        const headerHeight = 22;
+        const headerHeight = 20;
 
         doc.rect(x, y, pageWidth, headerHeight).fill('#D97706');
         headers.forEach((h, i) => {
-            doc.fontSize(8).font('Helvetica-Bold').fillColor('#FFFFFF')
-                .text(h, x + 3, y + 6, { width: colWidths[i] - 6, align: 'left' });
+            doc.fontSize(7).font('Helvetica-Bold').fillColor('#FFFFFF')
+                .text(h, x + 2, y + 5, { width: colWidths[i] - 4, align: 'left' });
             x += colWidths[i];
         });
         y += headerHeight;
 
         ledgers.forEach((l, idx) => {
-            if (y + 18 > doc.page.height - doc.page.margins.bottom) {
+            if (y + 16 > doc.page.height - doc.page.margins.bottom) {
                 doc.addPage();
                 y = doc.page.margins.top;
                 x = doc.page.margins.left;
                 doc.rect(x, y, pageWidth, headerHeight).fill('#D97706');
                 headers.forEach((h, i) => {
-                    doc.fontSize(8).font('Helvetica-Bold').fillColor('#FFFFFF')
-                        .text(h, x + 3, y + 6, { width: colWidths[i] - 6, align: 'left' });
+                    doc.fontSize(7).font('Helvetica-Bold').fillColor('#FFFFFF')
+                        .text(h, x + 2, y + 5, { width: colWidths[i] - 4, align: 'left' });
                     x += colWidths[i];
                 });
                 y += headerHeight;
             }
 
-            const rowHeight = 16;
+            const rowHeight = 14;
             const bgColor = idx % 2 === 0 ? '#FFFBEB' : '#FFFFFF';
             x = doc.page.margins.left;
             doc.rect(x, y, pageWidth, rowHeight).fill(bgColor);
 
-            const lastPayment = l.payments && l.payments.length > 0 ? l.payments[l.payments.length - 1].date : null;
             const pending = Math.max(0, l.totalAmount - l.paidAmount);
 
             const rowData = [
                 (idx + 1).toString(),
                 l.studentPRN || '-',
-                (l.studentName || '-').substring(0, 25),
+                (l.studentName || '-').substring(0, 22),
                 `${l.studentClass || ''} ${l.studentDivision || ''}`,
-                l.categoryName || '-',
+                (l.categoryName || '-').substring(0, 16),
                 formatCurrency(l.totalAmount),
                 formatCurrency(l.paidAmount),
                 formatCurrency(pending),
-                l.status.toUpperCase(),
-                formatDate(lastPayment)
+                l.status.toUpperCase()
             ];
 
             rowData.forEach((cell, i) => {
-                doc.fontSize(7).font('Helvetica').fillColor('#374151')
-                    .text(cell, x + 3, y + 4, { width: colWidths[i] - 6, align: 'left', lineBreak: false });
+                doc.fontSize(6).font('Helvetica').fillColor('#374151')
+                    .text(cell, x + 2, y + 3, { width: colWidths[i] - 4, align: 'left', lineBreak: false });
                 x += colWidths[i];
             });
             y += rowHeight;
         });
+
+        doc.fontSize(7).font('Helvetica').fillColor('#718096')
+            .text('Zeal Institute of Technology - ITSA Accounts', doc.page.margins.left, doc.page.height - 40);
 
         doc.end();
     });
@@ -807,7 +799,7 @@ const generateTransactionsExcel = async (incomeTransactions, expenditures) => {
 // ============================================
 const generateTransactionsPDF = (incomeTransactions, expenditures) => {
     return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
+        const doc = new PDFDocument({ size: 'A4', layout: 'portrait', margin: 30 });
         const buffers = [];
 
         doc.on('data', (chunk) => buffers.push(chunk));
@@ -816,25 +808,25 @@ const generateTransactionsPDF = (incomeTransactions, expenditures) => {
 
         const totalIncome = incomeTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
         const totalExpenditure = expenditures.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+        const headerHeight = 20;
 
         // ---- PAGE 1: Income Transactions ----
-        doc.fontSize(18).font('Helvetica-Bold').fillColor('#1A365D')
+        doc.fontSize(14).font('Helvetica-Bold').fillColor('#1A365D')
             .text('INFORMATION TECHNOLOGY STUDENT ASSOCIATION (ITSA)', { align: 'center' });
-        doc.fontSize(14).fillColor('#059669')
+        doc.fontSize(11).fillColor('#059669')
             .text('INCOME TRANSACTIONS BACKUP', { align: 'center' });
         doc.moveDown(0.3);
-        doc.fontSize(9).font('Helvetica').fillColor('#718096')
-            .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total Income: ${formatCurrency(totalIncome)}  |  Entries: ${incomeTransactions.length}`, { align: 'center' });
+        doc.fontSize(8).font('Helvetica').fillColor('#718096')
+            .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total: ${formatCurrency(totalIncome)}  |  Entries: ${incomeTransactions.length}`, { align: 'center' });
         doc.moveDown(0.8);
 
         // Income table
-        const incColWidths = [25, 70, 55, 40, 65, 110, 70, 60, 70, 70];
-        const incHeaders = ['Sr.', 'Date', 'Receipt', 'Roll', 'PRN', 'Name', 'Category', 'Class', 'Description', 'Amount'];
-        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+        const incColWidths = [25, 70, 50, 65, 100, 75, 55, 95];
+        const incHeaders = ['Sr.', 'Date', 'Receipt', 'PRN', 'Name', 'Category', 'Class', 'Amount'];
 
         let x = doc.page.margins.left;
         let y = doc.y;
-        const headerHeight = 20;
 
         doc.rect(x, y, pageWidth, headerHeight).fill('#059669');
         incHeaders.forEach((h, i) => {
@@ -867,17 +859,15 @@ const generateTransactionsPDF = (incomeTransactions, expenditures) => {
                 (idx + 1).toString(),
                 formatDate(t.createdAt || t.date),
                 t.receiptNumber || '-',
-                t.studentRollNo || '-',
                 t.studentPRN || '-',
-                t.studentName || '-',
-                t.category || '-',
+                (t.studentName || '-').substring(0, 22),
+                (t.category || '-').substring(0, 15),
                 `${t.studentClass || '-'}/${t.studentDivision || '-'}`,
-                (t.description || '-').substring(0, 25),
                 formatCurrency(t.amount),
             ];
 
             rowData.forEach((cell, i) => {
-                doc.fontSize(6.5).font('Helvetica').fillColor('#374151')
+                doc.fontSize(6).font('Helvetica').fillColor('#374151')
                     .text(cell, x + 2, y + 3, { width: incColWidths[i] - 4, align: 'left', lineBreak: false });
                 x += incColWidths[i];
             });
@@ -886,17 +876,17 @@ const generateTransactionsPDF = (incomeTransactions, expenditures) => {
 
         // ---- PAGE 2: Expenditure Transactions ----
         doc.addPage();
-        doc.fontSize(18).font('Helvetica-Bold').fillColor('#1A365D')
+        doc.fontSize(14).font('Helvetica-Bold').fillColor('#1A365D')
             .text('INFORMATION TECHNOLOGY STUDENT ASSOCIATION (ITSA)', { align: 'center' });
-        doc.fontSize(14).fillColor('#DC2626')
+        doc.fontSize(11).fillColor('#DC2626')
             .text('EXPENDITURE TRANSACTIONS BACKUP', { align: 'center' });
         doc.moveDown(0.3);
-        doc.fontSize(9).font('Helvetica').fillColor('#718096')
-            .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total Expenditure: ${formatCurrency(totalExpenditure)}  |  Entries: ${expenditures.length}`, { align: 'center' });
+        doc.fontSize(8).font('Helvetica').fillColor('#718096')
+            .text(`Generated: ${new Date().toLocaleString('en-IN')}  |  Total: ${formatCurrency(totalExpenditure)}  |  Entries: ${expenditures.length}`, { align: 'center' });
         doc.moveDown(0.8);
 
-        const expColWidths = [30, 85, 70, 90, 130, 100, 100, 80];
-        const expHeaders = ['Sr.', 'Date', 'Receipt', 'Category', 'Description', 'Sender', 'Receiver', 'Amount'];
+        const expColWidths = [25, 75, 55, 75, 120, 90, 95];
+        const expHeaders = ['Sr.', 'Date', 'Receipt', 'Category', 'Description', 'Receiver', 'Amount'];
 
         x = doc.page.margins.left;
         y = doc.y;
@@ -932,15 +922,14 @@ const generateTransactionsPDF = (incomeTransactions, expenditures) => {
                 (idx + 1).toString(),
                 formatDate(e.date || e.createdAt),
                 e.receiptNumber || '-',
-                e.category || '-',
-                (e.description || '-').substring(0, 40),
-                e.senderName || '-',
-                e.receiverName || '-',
+                (e.category || '-').substring(0, 15),
+                (e.description || '-').substring(0, 30),
+                (e.receiverName || '-').substring(0, 18),
                 formatCurrency(e.amount),
             ];
 
             rowData.forEach((cell, i) => {
-                doc.fontSize(6.5).font('Helvetica').fillColor('#374151')
+                doc.fontSize(6).font('Helvetica').fillColor('#374151')
                     .text(cell, x + 2, y + 3, { width: expColWidths[i] - 4, align: 'left', lineBreak: false });
                 x += expColWidths[i];
             });
