@@ -284,6 +284,7 @@ const getTransactions = asyncHandler(async (req, res) => {
             { $unwind: '$fines' },
             {
                 $project: {
+                    fineId: '$fines._id',
                     date: '$fines.date',
                     transactionType: { $literal: 'income' },
                     studentPRN: '$prn',
@@ -462,7 +463,56 @@ const getTransactions = asyncHandler(async (req, res) => {
     });
 });
 
+/**
+ * @desc    Bulk delete income transactions (fines from students)
+ * @route   DELETE /api/reports/income/bulk-delete
+ * @access  Private
+ *
+ * Request Body:
+ * { items: [{ studentPRN, fineId }] }
+ */
+const bulkDeleteIncomeTransactions = asyncHandler(async (req, res) => {
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        res.status(400);
+        throw new Error('Please provide items to delete');
+    }
+
+    // Group fineIds by studentPRN for efficient updates
+    const grouped = {};
+    for (const item of items) {
+        if (!item.studentPRN || !item.fineId) continue;
+        if (!grouped[item.studentPRN]) grouped[item.studentPRN] = [];
+        grouped[item.studentPRN].push(item.fineId);
+    }
+
+    let totalDeleted = 0;
+
+    for (const [prn, fineIds] of Object.entries(grouped)) {
+        const student = await Student.findOne({ prn, isActive: true });
+        if (!student) continue;
+
+        const originalCount = student.fines.length;
+        student.fines = student.fines.filter(
+            (fine) => !fineIds.includes(fine._id.toString())
+        );
+        const removed = originalCount - student.fines.length;
+        totalDeleted += removed;
+
+        if (removed > 0) {
+            await student.save();
+        }
+    }
+
+    res.status(200).json({
+        success: true,
+        data: { deletedCount: totalDeleted }
+    });
+});
+
 module.exports = {
     getStudentPayments,
-    getTransactions
+    getTransactions,
+    bulkDeleteIncomeTransactions
 };

@@ -9,7 +9,8 @@ const express = require('express');
 const router = express.Router();
 const {
     getStudentPayments,
-    getTransactions
+    getTransactions,
+    bulkDeleteIncomeTransactions
 } = require('../controllers/reportController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -52,5 +53,15 @@ router.get('/student-payments', getStudentPayments);
  * - limit: Results per page (default: 10)
  */
 router.get('/transactions', getTransactions);
+
+/**
+ * @route   DELETE /api/reports/income/bulk-delete
+ * @desc    Bulk delete income transactions (fines from students)
+ * @access  Private
+ *
+ * Request Body:
+ * { items: [{ studentPRN, fineId }] }
+ */
+router.delete('/income/bulk-delete', bulkDeleteIncomeTransactions);
 
 module.exports = router;

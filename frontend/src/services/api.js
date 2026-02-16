@@ -107,6 +107,7 @@ export const categoryAPI = {
 export const reportsAPI = {
     getStudentPayments: (params) => api.get('/reports/student-payments', { params }),
     getTransactions: (params) => api.get('/reports/transactions', { params }),
+    bulkDeleteIncome: (items) => api.delete('/reports/income/bulk-delete', { data: { items } }),
 };
 
 // ============================================
