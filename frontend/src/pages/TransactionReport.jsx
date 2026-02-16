@@ -42,7 +42,7 @@ const TransactionReport = () => {
     const [expenditureLoading, setExpenditureLoading] = useState(true);
     const [expenditureSummary, setExpenditureSummary] = useState({});
 
-    // Delete mode state
+    // Delete mode state (expenditure)
     const [deleteMode, setDeleteMode] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [deletePassword, setDeletePassword] = useState('');
@@ -51,6 +51,13 @@ const TransactionReport = () => {
     const [selectedDeleteIds, setSelectedDeleteIds] = useState([]);
     const [deleteSuccess, setDeleteSuccess] = useState('');
     const [deleting, setDeleting] = useState(false);
+
+    // Delete mode state (income)
+    const [incomeDeleteMode, setIncomeDeleteMode] = useState(false);
+    const [selectedIncomeDeleteItems, setSelectedIncomeDeleteItems] = useState([]);
+    const [incomeDeleteSuccess, setIncomeDeleteSuccess] = useState('');
+    const [incomeDeleting, setIncomeDeleting] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState('expenditure'); // 'income' or 'expenditure'
 
     const [error, setError] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -219,7 +226,8 @@ const TransactionReport = () => {
     };
 
     // Delete mode functions
-    const handleDeleteButtonClick = () => {
+    const handleDeleteButtonClick = (target = 'expenditure') => {
+        setDeleteTarget(target);
         setShowPasswordModal(true);
         setDeletePassword('');
         setPasswordError('');
@@ -236,9 +244,14 @@ const TransactionReport = () => {
             setPasswordError('');
             await authAPI.verifyPassword(deletePassword);
             setShowPasswordModal(false);
-            setDeleteMode(true);
-            setSelectedDeleteIds([]);
             setDeletePassword('');
+            if (deleteTarget === 'income') {
+                setIncomeDeleteMode(true);
+                setSelectedIncomeDeleteItems([]);
+            } else {
+                setDeleteMode(true);
+                setSelectedDeleteIds([]);
+            }
         } catch (err) {
             setPasswordError(err.response?.data?.message || 'Incorrect password. Please try again.');
         } finally {
@@ -250,6 +263,12 @@ const TransactionReport = () => {
         setDeleteMode(false);
         setSelectedDeleteIds([]);
         setDeleteSuccess('');
+    };
+
+    const handleCancelIncomeDelete = () => {
+        setIncomeDeleteMode(false);
+        setSelectedIncomeDeleteItems([]);
+        setIncomeDeleteSuccess('');
     };
 
     const toggleSelectExpenditure = (id) => {
@@ -265,6 +284,26 @@ const TransactionReport = () => {
             setSelectedDeleteIds([]);
         } else {
             setSelectedDeleteIds(expenditures.map(e => e._id));
+        }
+    };
+
+    const toggleSelectIncome = (studentPRN, fineId) => {
+        setSelectedIncomeDeleteItems(prev => {
+            const exists = prev.find(i => i.fineId === fineId && i.studentPRN === studentPRN);
+            if (exists) {
+                return prev.filter(i => !(i.fineId === fineId && i.studentPRN === studentPRN));
+            }
+            return [...prev, { studentPRN, fineId }];
+        });
+    };
+
+    const toggleSelectAllIncome = () => {
+        if (selectedIncomeDeleteItems.length === incomeTransactions.length) {
+            setSelectedIncomeDeleteItems([]);
+        } else {
+            setSelectedIncomeDeleteItems(
+                incomeTransactions.map(t => ({ studentPRN: t.studentPRN, fineId: t.fineId }))
+            );
         }
     };
 
@@ -288,6 +327,29 @@ const TransactionReport = () => {
             setError(err.response?.data?.message || 'Failed to delete expenditures');
         } finally {
             setDeleting(false);
+        }
+    };
+
+    const handleBulkDeleteIncome = async () => {
+        if (selectedIncomeDeleteItems.length === 0) {
+            setError('Please select at least one income transaction to delete');
+            return;
+        }
+
+        try {
+            setIncomeDeleting(true);
+            const response = await reportsAPI.bulkDeleteIncome(selectedIncomeDeleteItems);
+            setIncomeDeleteSuccess(`Successfully deleted ${response.data.data.deletedCount} income transaction(s)`);
+            setSelectedIncomeDeleteItems([]);
+            setIncomeDeleteMode(false);
+            // Refresh income transactions
+            fetchIncomeTransactions();
+            // Clear success message after 3 seconds
+            setTimeout(() => setIncomeDeleteSuccess(''), 3000);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to delete income transactions');
+        } finally {
+            setIncomeDeleting(false);
         }
     };
 
@@ -733,6 +795,16 @@ const TransactionReport = () => {
             {/* ==================== INCOME SECTION ==================== */}
             {activeTab === 'income' && (
                 <div className="space-y-6">
+                    {/* Income Delete Success Message */}
+                    {incomeDeleteSuccess && (
+                        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
+                            <span>{incomeDeleteSuccess}</span>
+                            <button onClick={() => setIncomeDeleteSuccess('')} className="text-green-700 hover:text-green-900">
+                                <FiX className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Income Header & Actions */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -740,18 +812,41 @@ const TransactionReport = () => {
                             Income Transactions
                         </h2>
                         <div className="flex gap-2 flex-wrap">
-                            <button onClick={() => setShowFilters(!showFilters)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                                <FiFilter /> Filters {showFilters ? <FiChevronUp /> : <FiChevronDown />}
-                            </button>
-                            <button onClick={exportIncomeToExcel}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                                <FiDownload /> Excel
-                            </button>
-                            <button onClick={exportIncomeToPDF}
-                                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                                <FiDownload /> PDF
-                            </button>
+                            {incomeDeleteMode ? (
+                                <>
+                                    <span className="flex items-center gap-2 px-4 py-2 text-gray-600">
+                                        {selectedIncomeDeleteItems.length} selected
+                                    </span>
+                                    <button onClick={handleBulkDeleteIncome}
+                                        disabled={selectedIncomeDeleteItems.length === 0 || incomeDeleting}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        {incomeDeleting ? 'Deleting...' : 'Confirm Delete'}
+                                    </button>
+                                    <button onClick={handleCancelIncomeDelete}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                        Cancel
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => setShowFilters(!showFilters)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                        <FiFilter /> Filters {showFilters ? <FiChevronUp /> : <FiChevronDown />}
+                                    </button>
+                                    <button onClick={exportIncomeToExcel}
+                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                        <FiDownload /> Excel
+                                    </button>
+                                    <button onClick={exportIncomeToPDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                                        <FiDownload /> PDF
+                                    </button>
+                                    <button onClick={() => handleDeleteButtonClick('income')}
+                                        className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
+                                        <FiTrash2 /> Delete
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -891,6 +986,17 @@ const TransactionReport = () => {
                                 <table className="w-full">
                                     <thead className="bg-green-50">
                                         <tr>
+                                            {incomeDeleteMode && (
+                                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase w-12">
+                                                    <button onClick={toggleSelectAllIncome} className="p-1 hover:bg-green-100 rounded">
+                                                        {selectedIncomeDeleteItems.length === incomeTransactions.length && incomeTransactions.length > 0 ? (
+                                                            <FiCheckSquare className="w-5 h-5 text-green-600" />
+                                                        ) : (
+                                                            <FiSquare className="w-5 h-5 text-gray-400" />
+                                                        )}
+                                                    </button>
+                                                </th>
+                                            )}
                                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer"
                                                 onClick={() => handleIncomeSort('date')}>
                                                 <div className="flex items-center gap-1">
@@ -919,10 +1025,21 @@ const TransactionReport = () => {
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                         {incomeTransactions.length === 0 ? (
-                                            <tr><td colSpan="9" className="px-4 py-12 text-center text-gray-500">No income transactions found</td></tr>
+                                            <tr><td colSpan={incomeDeleteMode ? "10" : "9"} className="px-4 py-12 text-center text-gray-500">No income transactions found</td></tr>
                                         ) : (
                                             incomeTransactions.map((t, idx) => (
-                                                <tr key={idx} className="hover:bg-green-50/30">
+                                                <tr key={t.fineId || idx} className={`hover:bg-green-50/30 ${selectedIncomeDeleteItems.find(i => i.fineId === t.fineId && i.studentPRN === t.studentPRN) ? 'bg-red-50' : ''}`}>
+                                                    {incomeDeleteMode && (
+                                                        <td className="px-4 py-3 text-center">
+                                                            <button onClick={() => toggleSelectIncome(t.studentPRN, t.fineId)} className="p-1 hover:bg-green-100 rounded">
+                                                                {selectedIncomeDeleteItems.find(i => i.fineId === t.fineId && i.studentPRN === t.studentPRN) ? (
+                                                                    <FiCheckSquare className="w-5 h-5 text-red-600" />
+                                                                ) : (
+                                                                    <FiSquare className="w-5 h-5 text-gray-400" />
+                                                                )}
+                                                            </button>
+                                                        </td>
+                                                    )}
                                                     <td className="px-4 py-3 text-sm text-gray-700">{formatDate(t.createdAt || t.date)}</td>
                                                     <td className="px-4 py-3 text-sm text-gray-700">{t.studentRollNo || '-'}</td>
                                                     <td className="px-4 py-3 text-gray-600 font-mono text-xs">
@@ -1015,7 +1132,7 @@ const TransactionReport = () => {
                                         className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                                         Add Expense
                                     </Link>
-                                    <button onClick={handleDeleteButtonClick}
+                                    <button onClick={() => handleDeleteButtonClick('expenditure')}
                                         className="flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
                                         <FiTrash2 /> Delete
                                     </button>
@@ -1250,7 +1367,7 @@ const TransactionReport = () => {
                             </div>
 
                             <p className="text-sm text-gray-500 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                                <strong>Note:</strong> This verification ensures only authorized users can delete expenditure records.
+                                <strong>Note:</strong> This verification ensures only authorized users can delete records.
                                 Deleted records cannot be recovered.
                             </p>
 
