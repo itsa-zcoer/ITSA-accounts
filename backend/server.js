@@ -21,6 +21,10 @@ connectDB();
 // Initialize Express app
 const app = express();
 
+// Trust first proxy (required for Render, Heroku, etc.)
+// This allows express-rate-limit to correctly identify users via X-Forwarded-For header
+app.set('trust proxy', 1);
+
 // ===========================================
 // Middleware Setup
 // ===========================================
